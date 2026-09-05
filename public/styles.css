@@ -1,0 +1,91 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --primary: #0d9488;
+  --primary-dark: #0f766e;
+  --primary-light: #ccfbf1;
+  --secondary: #0284c7;
+  --bg-slate: #f8fafc;
+  --card-bg: #ffffff;
+  --border-color: #e2e8f0;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --badge-high-bg: #fee2e2;
+  --badge-high-text: #b91c1c;
+  --badge-low-bg: #fef3c7;
+  --badge-low-text: #b45309;
+  --badge-normal-bg: #dcfce7;
+  --badge-normal-text: #15803d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #f1f5f9;
+  color: var(--text-main);
+  margin: 0;
+  padding: 0;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Provenance highlight flash */
+.highlight-source {
+  background-color: #fef08a !important;
+  transition: background-color 0.8s ease;
+  border-left: 4px solid #eab308;
+  padding-left: 8px;
+  border-radius: 2px;
+}
+
+.badge-high {
+  background-color: var(--badge-high-bg);
+  color: var(--badge-high-text);
+  border: 1px solid #fca5a5;
+}
+
+.badge-low {
+  background-color: var(--badge-low-bg);
+  color: var(--badge-low-text);
+  border: 1px solid #fcd34d;
+}
+
+.badge-normal {
+  background-color: var(--badge-normal-bg);
+  color: var(--badge-normal-text);
+  border: 1px solid #86efac;
+}
+
+.badge-unspecified {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+/* Modal animations */
+.modal-overlay {
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  transition: opacity 0.2s ease-in-out;
+}
