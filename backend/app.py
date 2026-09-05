@@ -32,12 +32,16 @@ app.add_middleware(
 # Active state in-memory database
 CURRENT_RECORD: PatientRecord = get_sarah_jenkins_record()
 
-UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "..", "uploads")
+# Handle Vercel / serverless writable directory (/tmp)
+if os.environ.get("VERCEL"):
+    UPLOAD_DIR = "/tmp/uploads"
+else:
+    UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "..", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @app.get("/api/health")
 def health():
-    return {"status": "online", "system": "MedVault Clinical Intelligence Engine", "version": "2.4.0"}
+    return {"status": "online", "system": "MedVault Clinical Intelligence Engine", "version": "2.4.0", "deployment": "Vercel Serverless Ready"}
 
 @app.get("/api/sample-personas")
 def list_sample_personas():
@@ -97,7 +101,6 @@ def update_intake(req: IntakeUpdateRequest):
     CURRENT_RECORD.intake.medications = meds
     CURRENT_RECORD.intake.allergies = allergies
 
-    # Re-evaluate inconsistencies and summaries
     CURRENT_RECORD.conflicts = detect_inconsistencies(
         CURRENT_RECORD.intake, 
         CURRENT_RECORD.current_labs, 
@@ -129,17 +132,14 @@ async def upload_medical_report(file: UploadFile = File(...)):
     report = process_document(file_path, filename=file.filename)
     
     if not report.tests:
-        # If no tests extracted, return warning
         return JSONResponse(status_code=400, content={"error": "No laboratory test values could be parsed from the uploaded document."})
 
-    # Archive previous current_labs as previous_labs if we have new labs
     if CURRENT_RECORD.current_labs:
         CURRENT_RECORD.previous_labs = CURRENT_RECORD.current_labs
 
     CURRENT_RECORD.current_labs = report.tests
     CURRENT_RECORD.reports.append(report)
 
-    # Re-evaluate trends
     if CURRENT_RECORD.previous_labs:
         CURRENT_RECORD.trends = compute_longitudinal_trends(
             CURRENT_RECORD.previous_labs, 
@@ -148,14 +148,12 @@ async def upload_medical_report(file: UploadFile = File(...)):
             curr_date=report.report_date
         )
 
-    # Re-evaluate conflicts
     CURRENT_RECORD.conflicts = detect_inconsistencies(
         CURRENT_RECORD.intake, 
         CURRENT_RECORD.current_labs, 
         CURRENT_RECORD.reports
     )
 
-    # Re-generate summaries
     CURRENT_RECORD.summary_patient, CURRENT_RECORD.questions_for_doctor = generate_patient_summary(
         CURRENT_RECORD.intake, CURRENT_RECORD.current_labs, CURRENT_RECORD.trends, CURRENT_RECORD.conflicts
     )
@@ -181,7 +179,6 @@ def verify_test(req: VerifyTestRequest):
             old_val = t.value
             if req.verified_value is not None:
                 t.value = req.verified_value
-                # Recalculate status with updated value
                 t.status = evaluate_status(t.value, t.reference_range)
             if req.verified_unit:
                 t.unit = req.verified_unit
@@ -203,7 +200,6 @@ def verify_test(req: VerifyTestRequest):
     if not found:
         raise HTTPException(status_code=404, detail="Test record not found")
 
-    # Refresh summaries
     CURRENT_RECORD.summary_patient, CURRENT_RECORD.questions_for_doctor = generate_patient_summary(
         CURRENT_RECORD.intake, CURRENT_RECORD.current_labs, CURRENT_RECORD.trends, CURRENT_RECORD.conflicts
     )
@@ -223,6 +219,7 @@ def export_pdf():
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
-# Static frontend files mount
+# Static frontend files mount (for local runs)
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")
-app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+if os.path.exists(FRONTEND_DIR):
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
